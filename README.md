@@ -1,4 +1,4 @@
-# Yakumo Logistics
+# Yakumo Logistics (v0.6)
 A Factory Manager for Computercraft
 
 # How to Download Main program
