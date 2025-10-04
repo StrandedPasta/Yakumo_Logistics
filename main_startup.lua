@@ -75,6 +75,7 @@ function setFiles()
         fs.copy("template.txt",log)
         errorfile = log
     end
+    setDrive()
 end
 
 function setDrive()
@@ -205,7 +206,7 @@ function chainHub()
     local selected = 1
     local count = 0
     if drive[1] ~= "" then
-        for i = 1, #drive-1 do
+        for i = 1, #drive do
             local wrap = peripheral.wrap(drive[i])
             local disk = wrap.getMountPath()
             count = count + fs.getFreeSpace(disk)
@@ -402,7 +403,7 @@ function removeRecipe()
 
     if drive ~= nil then
         drawFullScreen()
-        for i = 1, #drive-1 do
+        for i = 1, #drive do
             local path = peripheral.wrap(drive[i])
             local mount = path.getMountPath()
             local list = fs.list(mount)
@@ -456,7 +457,7 @@ function readRecipe()
     local files = {}
     local doc = {}
     if drive[1] ~= nil or drive[1] ~= "" then
-        for i = 1, #drive-1 do
+        for i = 1, #drive do
             local path = peripheral.wrap(drive[i])
             local mount = path.getMountPath()
             local list = fs.list(mount)
@@ -810,7 +811,7 @@ function addCraft(sub)
                     file.writeLine(pattern2)
                     file.writeLine(pattern3)
                     file.close()
-                    for i = 1, #drive-1 do
+                    for i = 1, #drive do
                     local path = peripheral.wrap(drive[i])
                     local mount = path.getMountPath()
                     local disk = mount .. "/" .. text
@@ -987,7 +988,7 @@ function addMix(sub)
                     file.writeLine(item)
                     file.writeLine(itemAmount)
                     file.close()
-                    for i = 1, #drive-1 do
+                    for i = 1, #drive do
                     local path = peripheral.wrap(drive[i])
                     local mount = path.getMountPath()
                     local disk = mount .. "/" .. text
@@ -1135,7 +1136,7 @@ function addTransfer(sub)
                     file.writeLine(Output)
                     file.writeLine(OSlot)
                     file.close()
-                    for i = 1, #drive-1 do
+                    for i = 1, #drive do
                     local path = peripheral.wrap(drive[i])
                     local mount = path.getMountPath()
                     local disk = mount .. "/" .. text
@@ -1667,32 +1668,15 @@ function deletePeripheral(file)
 end
 
 function addDrive()
-    selected = 1
     drawFullScreen()
     
         local all = {peripheral.getName(peripheral.find("drive"))}
-        local periphfile = fs.open("drive.txt", "r")
-        local used = {}
-        local total ={}
         local avaiable = {}
         local space = 1
-        local loop = 1
 
-        while true do
-            local peri = periphfile.readLine()
-            if not peri then
-                periphfile.close()
-                break
-            end
-            used[loop] = string.sub(peri,1)
-            if peri ~= "" then
-                total[loop] = peri
-                loop = loop + 1
-            end
-        end
         for i = 1, #all do
-            for j = 1, #used do
-                if all[i] == used[j] then
+            for j = 1, #drive do
+                if all[i] == drive[j] then
                     all[i] = "nil"
                 end
             end
@@ -1708,13 +1692,22 @@ function addDrive()
             print("No Drives Avaiable")
             sleep(3)
         else
-            setListPages(avaiable,"Choose Drive:")
+            local selected = setListPages(avaiable,"Choose Drive:")
+            local file = fs.open("drive.txt", "w")
+            local print = 1
+            for i = 1, #drive + 1 do
+                if i ~= #drive + 1 and drive[i] ~= "" then
+                    file.writeLine(drive[print])
+                    print = print + 1
+                elseif i == #drive + 1 and drive[i] ~= "" then
+                    file.writeLine(avaiable[selected])
+                end
+            end
         end
 end
 
 function backupHud()
     local selected = 1
-    local page = 1
 
     while true do
         drawScreen(2,14,50,18)
