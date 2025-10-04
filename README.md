@@ -48,6 +48,7 @@ In order to start your factory managing, you need to hook the system up to a dri
 - Unlink Disk: This removes the disk from the system. Do not do this with one disk left inside the system. Might cause the whole system to shut down, or may lead to bugs.
 
 **Chapter 2: Chains**
+
 Chains are the backbone of your factory. They essencially allow you to transfer, craft, and mix all sorts of stuff together. There are four modes for you to remember. .Mix, .FluidMix, .Craft, and .Transfer. You can find it in the factory menu.
 
 .Mix and .FluidMix do the same thing, they take the input of a machine, and drain/push the results out. If you want to make Builder's tea from create, use .FluidMix since it takes both items and fluids. .Mix only takes items in comparison.
@@ -63,6 +64,7 @@ Chains are the backbone of your factory. They essencially allow you to transfer,
 - Del Sub: This deletes a submode of your choosing.
 
 **Chapter 3: Backup and Errorlog**
+
 Grouping these two since one of them is just its own command. Backup and Errerlog deal with errors or problems in your network. Backup sets a backup storage for all the recipies when the system shutsdown. Its not perfect, but it'll do.
 
 As for Error logs, they are self explanitory. They show errors of your recipies. Rather no peripherals or invalid recipies. It has it all! (In theory).
