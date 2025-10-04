@@ -2924,14 +2924,14 @@ function clearObjects(peripherals, inventory, fluid)
     local flu = groupCheck(fluid,"FluidBackup")
     local fluwrap = {}
 
-    if not inventory or inv[1] == "nil" then
+    if not inventory or inv == false then
         invwrap = searchPeripheral({"minecraft:chest"})
     else
         for i = 1, #inv do
             invwrap[i] = peripheral.wrap(inv[i])
         end 
     end
-    if not fluid or flu[1] == "nil" then
+    if not fluid or flu == false then
         fluid = searchPeripheral({"create:fluid_tank"})
     else
         for i = 1, #flu do
@@ -3190,3 +3190,4 @@ end
 setFiles()
 clearObjects(searchPeripheralFile("blacklist.txt",true),settings.get("Item.setting"), settings.get("Liquid.setting"))
 parallel.waitForAny(systemHudSetup, runChains)
+
