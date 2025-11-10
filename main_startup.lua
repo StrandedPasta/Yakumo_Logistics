@@ -361,6 +361,10 @@ function addRecipe()
     if drive ~= nil then
         local slot = 1
         local submodefile = fs.open("submodes.txt", "r")
+        while submodefile == nil do
+            sleep(0.1)
+            submodefile = fs.open("submodes.txt", "r")
+        end
         while true do
         local line = submodefile.readLine()
             if not line or line == "nil" then
@@ -470,6 +474,10 @@ function readRecipe()
             drawFullScreen()
             local selected = setListPages(files,"Choose Recipe:")
             local flies = fs.open(files[selected],"r")
+            while flies == nil do
+                sleep(0.1)
+                flies = fs.open(files[selected],"r")
+            end
             while true do
                 local line = flies.readLine()
                 if not line then
@@ -553,6 +561,10 @@ function addSubMode()
     end
     if save == true then
         local submodesr = fs.open("submodes.txt","r")
+        while submodesr == nil do
+            sleep(0.1)
+            submodesr = fs.open("submodes.txt","r")
+        end
         while true do
             local subline = submodesr.readLine()
             if not subline then
@@ -565,6 +577,10 @@ function addSubMode()
             end
         end
         local submodesw = fs.open("submodes.txt","w")
+        while submodesw == nil do
+            sleep(0.1)
+            submodesw = fs.open("submodes.txt","w")
+        end
         for i = 1, #total + 1 do
             if i < #total + 1 then
                 submodesw.writeLine(total[i])
@@ -1552,7 +1568,11 @@ function peripheralHud()
 end
 
 function addPeripheral()
-    local peripheralfile = fs.open("peripherals.txt", "r")
+        local peripheralfile = fs.open("peripherals.txt", "r")
+        while peripheralfile == nil do
+            sleep(0.5)
+            peripheralfile = fs.open("peripherals.txt", "r")
+        end
         local all = peripheral.getNames()
         local total = {}
         local amount = 1
@@ -1578,6 +1598,10 @@ function addPeripheral()
                 line1 = read()
                 local line = line1 .. "." .. line2
                 local perip = fs.open("peripherals.txt","w")
+                while perip == nil do
+                    sleep(0.1)
+                    perip = fs.open("peripherals.txt","w")
+                end
                 local print = 1
                 for i = 1, #total + 1 do
                     if i ~= #total + 1 and total[i] ~= "" then
@@ -1610,26 +1634,7 @@ function listPeripheral()
         peripherals[slot] = line
         slot = slot + 1
     end
-    for i = 1, #peripherals do
-        if i <= 14 then
-            term.setCursorPos(4,3+i)
-            print(peripherals[i])
-
-        elseif 14 < i <= 28 then
-            term.setCursorPos(20,3+i-14)
-            print(peripherals[i])
-
-        elseif 28 < i <= 42 then
-            term.setCursorPos(36,3+i-28)
-            print(peripherals[i])
-        end
-    end
-    while true do
-        local event, key, is_held = os.pullEvent("key")
-        if keys.getName(key) == "backspace" then
-            break
-        end
-    end
+    setListPages(peripherals, "Peripherals")
 end
 
 function deletePeripheral(file)
@@ -1639,6 +1644,10 @@ function deletePeripheral(file)
         
     drawFullScreen()
     local peripheralfile = fs.open(file, "r") 
+    while peripheralfile == nil do
+        sleep(0.1)
+        peripheralfile = fs.open(file, "r") 
+    end
     while true do
         local line = peripheralfile.readLine()
         if not line or line == "" then
@@ -1653,6 +1662,10 @@ function deletePeripheral(file)
         if continue ~= -1 then
             peripherals[continue] = "nil"
             local perip = fs.open(file,"w")
+            while perip == nil do
+                sleep(0.1)
+                perip = fs.open(file, "r") 
+            end
                 for i = 1, #peripherals + 1 do
                     if i < #peripherals + 1 and peripherals[i] ~= "nil" then
                         perip.writeLine(peripherals[i])
@@ -1962,7 +1975,7 @@ function retainer(func, mode)
     local mark = 1
     local setfiles = {}
     if drive[1] ~= "" then
-        for i = 1, #drive-1 do
+        for i = 1, #drive do
                 local mount = peripheral.wrap(drive[i])
                 local path = mount.getMountPath() 
                 local files = fs.list(path)
@@ -1989,7 +2002,6 @@ function retainer(func, mode)
             sleep(0.1)
         end
     end
-    print(mode)
 end
 
 function runMix(path)
@@ -1999,8 +2011,11 @@ function runMix(path)
     local correct = true
     local stopped = true
     local machines = 1
-    if path ~= "" then
+    if path ~= "" and path ~= nil then
         local file = fs.open(path, "r")
+        if file == nil then
+            return
+        end
         file.readLine()
 
         while true do
@@ -2113,11 +2128,11 @@ function runMix(path)
                 local check = OutMachineList[machines].getItemDetail(1)
                 if templist ~= nil then
                     if check == nil or templist.name ~= check.name then
-                    subTransferItem(OutMachineList,machines,OutputList,Max,Result,path)
+                    subTransferItem(OutMachineList,machines,OutputList,Max,Result,path, true)
                     return true
                     end
                 elseif templist == nil and check ~= nil then
-                    subTransferItem(OutMachineList,machines,OutputList,Max,Result,path)
+                    subTransferItem(OutMachineList,machines,OutputList,Max,Result,path, true)
                     return true
                 end
             end
@@ -2135,8 +2150,11 @@ function runCraft(path)
     local count = 0
     local correct = true
 
-    if path ~= "" then
+    if path ~= "" and path ~= nil then
         local file = fs.open(path, "r")
+        if file == nil then
+            return
+        end
         file.readLine()
         local recipe = file.readLine()
         if recipe == "XX" or recipe == "XXXXXXXXXXX" then
@@ -2262,8 +2280,11 @@ function runFluidMix(path)
     local stopped = true
     local machines = 1
 
-    if path ~= "" then
+    if path ~= "" and path ~= nil  then
         local file = fs.open(path, "r")
+        if file == nil then
+            return
+        end
         file.readLine()
 
         while true do
@@ -2428,13 +2449,13 @@ function runFluidMix(path)
                 if templist ~= nil then
                     if check == nil or templist.name ~= check.name then
                         if pcall(function() OutputList[1].list() end) then
-                            local item = subTransferItem(OutMachineList, machines, OutputList, desired, Result, path)
+                            local item = subTransferItem(OutMachineList, machines, OutputList, desired, Result, path, true)
                             if item == false then
                                 return false
                             end                        
                         end
                         if pcall(function() OutputList[1].tanks() end) then
-                            local fluid = subTransferFluid(OutMachineList, machines, OutputList, desired, Result, path)
+                            local fluid = subTransferFluid(OutMachineList, machines, OutputList, desired, Result, path, true)
                             if fluid == false then
                                 return false
                             end
@@ -2443,13 +2464,13 @@ function runFluidMix(path)
                     end
                 elseif temptlist == nil and check ~= nil then
                         if pcall(function() OutputList[1].list() end) then
-                            local item = subTransferItem(OutMachineList, machines, OutputList, desired, Result, path)
+                            local item = subTransferItem(OutMachineList, machines, OutputList, desired, Result, path, true)
                             if item == false then
                                 return false
                             end                        
                         end
                         if pcall(function() OutputList[1].tanks() end) then
-                            local fluid = subTransferFluid(OutMachineList, machines, OutputList, desired, Result, path)
+                            local fluid = subTransferFluid(OutMachineList, machines, OutputList, desired, Result, path, true)
                             if fluid == false then
                                 return false
                             end
@@ -2463,20 +2484,29 @@ function runFluidMix(path)
 
 function runTransfer(path)
 
-    if path ~= "" or not path then
+    if path ~= "" and path ~= nil  then
         local file = fs.open(path, "r")
+        if file == nil then
+            return
+        end
         file.readLine()
 
         local variable = file.readLine()
         local desired = file.readLine()
         file.readLine()
         local Input = groupCheck(file.readLine(),path)
+        if Input == false then
+            return false
+        end
         local InputList = {}
         for i = 1, #Input do
             InputList[i] = peripheral.wrap(Input[i])
         end
         local ISlot = file.readLine()
         local Output = groupCheck(file.readLine(),path)
+        if Output == false then
+            return false
+        end
         local OutputList = {}
         for j = 1, #Output do
             OutputList[j] = peripheral.wrap(Output[j])
@@ -2484,19 +2514,19 @@ function runTransfer(path)
         local OSlot = file.readLine()
 
         if pcall(function () OutputList[1].list() end) then
-            if not OSlot then
-                local item = subTransferItem(InputList, #InputList, OutputList, desired, variable, path)
+            if OSlot == "" then
+                local item = subTransferItem(InputList, #OutputList, OutputList, desired, variable, path)
                 if item == false then
                     return false
                 end
             else
-                local item = subTransferSlot(InputList, #InputList, OutputList, desired, variable, OSlot, path)
+                local item = subTransferSlot(InputList, #OutputList, OutputList, desired, variable, OSlot, path)
                 if item == false then
                     return false
                 end
             end
         elseif pcall(function () OutputList[1].tanks() end) then
-            local fluid = subTransferFluid(InputList, #InputList, OutputList, desired, variable, path)
+            local fluid = subTransferFluid(InputList, #OutputList, OutputList, desired, variable, path)
             if fluid == false then
                 return false
             end
@@ -2508,8 +2538,10 @@ function runTransfer(path)
     end
 end
 
-function subTransferItem(input, machines, output, desired, variable, path)
+function subTransferItem(input, machines, output, desired, variable, path, multi)
     local amount = 0
+    local set = desired * machines
+    desired = desired * machines
             if pcall(function() input[1].size() end) then
                 for l = 1, #output do
                     for slot, item  in pairs(output[l].list()) do
@@ -2518,20 +2550,22 @@ function subTransferItem(input, machines, output, desired, variable, path)
                         end
                     end
                 end
-                if amount < desired+0 then
+                if amount < desired*#output then
                     for j = 1, machines do
                         for k = 1, #output do
                             for i = 1, input[1].size() do
                                 local spot = input[j].getItemDetail(i)
                                 if spot ~= nil then
                                     if spot.name == variable then
-                                        local call = output[k].pullItems(peripheral.getName(input[j]),i,desired+0)
+                                        local call = output[k].pullItems(peripheral.getName(input[j]),i,set/machines)
                                         desired = desired - call
                                         if call == 0 then
                                             break
                                         elseif desired <= 0 then
                                             return
                                         end
+                                    elseif multi == true then
+                                        output[k].pullItems(peripheral.getName(input[j]),i,desired+0)
                                     end
                                 end
                             end
@@ -2547,6 +2581,8 @@ end
 function subTransferFluid(input, machines, output, desired, variable, path)
     local amount = 0
     local tanks = 1
+    local set = desired * machines
+    desired = desired * machines
             if pcall(function() input[1].tanks() end) then
                 for l = 1, #output do
                     for slot, fluid  in pairs(output[l].tanks()) do
@@ -2562,7 +2598,7 @@ function subTransferFluid(input, machines, output, desired, variable, path)
                 if amount < desired+0 then
                     for i = 1, machines do
                         for k = 1, #output do
-                                local call = output[k].pullFluid(peripheral.getName(input[i]),desired+0,variable)
+                                local call = output[k].pullFluid(peripheral.getName(input[i]),set/machines,variable)
                                 desired = desired - call
                                 if call == 0 then
                                     break
@@ -2581,6 +2617,7 @@ end
 function subInsertItem(input, machines, output, desired, variable, path)
     local amount = 0
     local chosen = 0
+    local select = 1
     local set = desired * machines
     desired = desired * machines
         if pcall(function() input[1].size() end) then
@@ -2595,17 +2632,16 @@ function subInsertItem(input, machines, output, desired, variable, path)
                 for slot, item  in pairs(input[i].list()) do
                     if item.name == variable then
                         chosen = slot
+                        selected = i
                     end
                 end
             end
             if amount < desired then
-                for j = 1, #input do
-                    for k = 1, machines do
-                        local call = output[k].pullItems(peripheral.getName(input[j]),chosen,set/machines)
-                        desired = desired - call
-                        if call == 0 then
-                            break
-                        end
+                for k = 1, machines do
+                    local call = output[k].pullItems(peripheral.getName(input[selected]),chosen,set/machines)
+                    desired = desired - call
+                    if call == 0 then
+                        break
                     end
                 end
             end
@@ -2617,6 +2653,8 @@ end
 
 function subTransferSlot(input, machines, output, desired, variable, slot, path)
     local amount = 0
+    local set = desired * machines
+    desired = desired * machines
             if pcall(function() input[1].size() end) then
                 for l = 1, #output do
                     for slot, item  in pairs(output[l].list()) do
@@ -2632,7 +2670,7 @@ function subTransferSlot(input, machines, output, desired, variable, slot, path)
                                 local spot = input[j].getItemDetail(i)
                                 if spot ~= nil then
                                     if spot.name == variable then
-                                        local call = input[j].pushItems(peripheral.getName(output[k]),i,desired+0,slot+0)
+                                        local call = input[j].pushItems(peripheral.getName(output[k]),i,set/machines,slot+0)
                                         desired = desired - call
                                         if call == 0 then
                                             break
@@ -2649,7 +2687,6 @@ function subTransferSlot(input, machines, output, desired, variable, slot, path)
                 errorHandler("Input isnt Inventory", path)
                 return false
             end
-            --2
 end
 
 function errorList()
@@ -3084,6 +3121,10 @@ function groupCheck(peripher, path)
             end
         end
         local files = fs.open("peripherals.txt","r")
+        while files == nil do
+            sleep(0.1)
+            files = fs.open("peripherals.txt","r")
+        end
         while true do
             local line = files.readLine()
             if line == "" or line == "nil" or not line then
@@ -3190,4 +3231,3 @@ end
 setFiles()
 clearObjects(searchPeripheralFile("blacklist.txt",true),settings.get("Item.setting"), settings.get("Liquid.setting"))
 parallel.waitForAny(systemHudSetup, runChains)
-
