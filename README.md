@@ -1,4 +1,4 @@
-# Yakumo Logistics (v0.6)
+# Yakumo Logistics (v0.7)
 A Factory Manager for [Computercraft/CC: Tweaked](https://tweaked.cc/)
 
 # How to Download Main program
