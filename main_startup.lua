@@ -55,6 +55,12 @@ function setFiles()
 
     if not fs.exists("errorlogs") then
         fs.makeDir("errorlogs")
+        local log = "/errorlogs/" .. settings.get("Error.setting") .. "_" .. textutils.formatTime(os.time("local"),true) .. "_errorlog.txt"
+        local count = settings.get("Error.setting")
+        settings.set("Error.setting",count + 1)
+        settings.save()
+        fs.copy("template.txt",log)
+        errorfile = log
     else
         local list = fs.list("/errorlogs/")
         local log = "/errorlogs/" .. settings.get("Error.setting") .. "_" .. textutils.formatTime(os.time("local"),true) .. "_errorlog.txt"
@@ -696,17 +702,11 @@ function addCraft(sub)
         term.setCursorPos(4,7)
         outputAmount = read()
         drawFullScreen()
-        term.setCursorPos(4,4)
-        print("Select Input:")
-        Input = selectIOList(all)
+        Input = selectIOList(all,"Select Input:")
         drawFullScreen()
-        term.setCursorPos(4,4)
-        print("Select Turtle:")
-        Turtle = selectIOList(all)
+        Turtle = selectIOList(all,"Select Turtle:")
         drawFullScreen()
-        term.setCursorPos(4,4)
-        print("Select Output:")
-        Output = selectIOList(all)
+        Output = selectIOList(all,"Select Output:")
         while true do
             --Results
             if scroll == 0 then
@@ -1047,7 +1047,7 @@ function addTransfer(sub)
         name = read()
         drawFullScreen()
         term.setCursorPos(4,4)
-        print("Enter Object (Ex: A = minecraft:dirt):")
+        print("Enter Object (Ex: minecraft:dirt):")
         term.setCursorPos(4,5)
         item = read()
         term.setCursorPos(4,6)
@@ -1797,7 +1797,7 @@ function changeBackup()
         if selected == -1 then
             break
         elseif types[selected] ~= "" then
-            local list = searchPeripheralFile("blacklist.txt")
+            local list = peripheral.getNames()
             local chosen = selectIOList(list, "Choose Peripherals")
             if types[selected] == "Item" then
                 settings.set("Item.setting", chosen)
@@ -2251,22 +2251,20 @@ function runCraft(path)
                             chosen[1] = -1
                         end
                     end
-                end
-            end
-
-            local message = transmitTurtle()
-
-            for i = 1, #OutputList do
-                for j = 1, 12 do
-                    local remaining = OutputList[i].pullItems(peripheral.getName(Turtle),j)
-                    if remaining == 0 and j == 4 then
-                        message = false
+                    local message = transmitTurtle()
+                    for i = 1, #OutputList do
+                        for j = 1, 12 do
+                            local remaining = OutputList[i].pullItems(peripheral.getName(Turtle),j)
+                            if remaining == 0 and j == 4 then
+                                message = false
+                            end
+                        end
+                    end
+                    if message == false then
+                        errorHandler("Unable to Craft", path)
+                        return false
                     end
                 end
-            end
-            if message == false then
-                errorHandler("Unable to Craft", path)
-                return false
             end
         end
     end
@@ -3046,8 +3044,8 @@ function selectIOList(list, string)
                     print("Group..  ")
                 end
                 term.setCursorPos(4,5+i)
-                if list[i+1] ~= nil then
-                if i+1 == selected and list[i+1] ~= "" then
+                if list[i] ~= nil then
+                if i+1 == selected and list[i] ~= "" then
                     print(list[i], "<")
                 else
                     print(list[i], " ")
@@ -3057,34 +3055,34 @@ function selectIOList(list, string)
                 term.setCursorPos(4,4)
                 print(string)
                 term.setCursorPos(4,4+i)
-                if list[(page-1)*10+i] ~= nil then
-                    if (page-1)*10+i == selected then
-                        print(list[(page-1)*10+i], "<")
+                if list[(page-1)*11+i-1] ~= nil then
+                    if (page-1)*11+i == selected then
+                        print(list[(page-1)*11+i-1], "<")
                     else
-                        print(list[(page-1)*10+i], " ")
+                        print(list[(page-1)*11+i-1], " ")
                     end
                 end
             end
         end
         --Keypresses
         local event, key, is_held = os.pullEvent("key")
-        if keys.getName(key) == "down" and selected < (page)*10 and selected < #list and page ~= 1 then
+        if keys.getName(key) == "down" and selected < (page)*11 and selected < #list+1 and page ~= 1 then
             selected = selected + 1
         elseif keys.getName(key) == "down" and selected < (page)*11 and selected < #list+1 and page == 1 then
             selected = selected + 1
-        elseif keys.getName(key) == "up" and selected > (page-1)*10+1 then
+        elseif keys.getName(key) == "up" and selected > (page-1)*11+1 then
             selected = selected - 1
         elseif keys.getName(key) == "left" and page > 1 then
             page = page - 1
             if page ~= 1 then
-                selected = ((page - 1) * 11)
+                selected = ((page - 1) * 11+1)
             else
                 selected = 1
             end
         elseif keys.getName(key) == "right" and page < max-1 then
             page = page + 1
             if page ~= 1 then
-                selected = ((page - 1) * 11)
+                selected = ((page - 1) * 11+1)
             else
                 selected = 1
             end
@@ -3096,7 +3094,7 @@ function selectIOList(list, string)
                 term.setCursorPos(4,5)
                 return read()
             elseif selected > 1 then
-                return list[selected]
+                return list[selected-1]
             end
         end
     end
