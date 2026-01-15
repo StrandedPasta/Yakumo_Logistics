@@ -2,6 +2,8 @@
 local drive = {}
 local modem = nil
 local reset = false
+local clear = false
+local shutdown = 0
 local erroramount = 0
 local errorfile = ""
 
@@ -110,6 +112,9 @@ function systemHudSetup()
         term.setCursorPos(39,16)
         term.setTextColor(colors.red)
         print("Errors:", erroramount)
+
+        term.setCursorPos(16,2)
+        drawLogo()
 
         if selected == 1 then
             drawSelection(2,2,16,6,true)
@@ -1263,7 +1268,10 @@ function addFluidMix(sub)
         OutMachine = selectIOList(all,"Select Machine (Output):")
         drawFullScreen()
         term.setCursorPos(4,4)
-        Output = selectIOList(all,"Select Output:")
+        OutputI = selectIOList(all,"Select Item Output:")
+        drawFullScreen()
+        term.setCursorPos(4,4)
+        OutputF = selectIOList(all,"Select Fluid Output:")
 
         while true do
             --Results
@@ -1299,7 +1307,7 @@ function addFluidMix(sub)
                     end
                 end
             elseif scroll == 2 then
-                drawScreen(2,7,50,18)
+                drawScreen(2,7,50,28)
                 term.setCursorPos(4,8)
                 print("Selected Item Input:")
                 term.setCursorPos(4,9)
@@ -1316,10 +1324,17 @@ function addFluidMix(sub)
                 print("Selected Machine (O):")
                 term.setCursorPos(4,15)
                 print(OutMachine)
-                term.setCursorPos(4,16)
-                print("Selected Output:")
-                term.setCursorPos(4,17)
-                print(Output)
+
+            elseif scroll == 3 then
+                drawScreen(2,7,50,18)
+                term.setCursorPos(4,8)
+                print("Selected Item Output:")
+                term.setCursorPos(4,9)
+                print(OutputI)
+                term.setCursorPos(4,10)
+                print("Selected Fluid Output:")
+                term.setCursorPos(4,11)
+                print(OutputF)
             end
 
             --Savebox
@@ -1343,13 +1358,13 @@ function addFluidMix(sub)
 
             --Keypresses
             local event, key, is_held = os.pullEvent("key")
-            if keys.getName(key) == "down" and scroll < 2 then
+            if keys.getName(key) == "down" and scroll < 3 then
                 scroll = scroll + 1
             elseif keys.getName(key) == "up" and scroll > 0 then
                 scroll = scroll - 1
             elseif keys.getName(key) == "left" and save == false then
                 save = true
-            elseif keys.getName(key) == "right" and save== true then
+            elseif keys.getName(key) == "right" and save == true then
                 save = false
             elseif keys.getName(key) == "backspace" then
                 break
@@ -1380,7 +1395,8 @@ function addFluidMix(sub)
                     file.writeLine(InputF)
                     file.writeLine(InMachine)
                     file.writeLine(OutMachine)
-                    file.writeLine(Output)
+                    file.writeLine(OutputI)
+                    file.writeLine(OutputF)
                     file.writeLine("")
                     file.writeLine(item)
                     file.writeLine(itemAmount)
@@ -1737,6 +1753,10 @@ function backupHud()
             term.setCursorPos(40,4)
             print("Del BList")
 
+            drawSelection(2,8,15,12,false)
+            term.setCursorPos(5,10)
+            print("Shutdown")
+
         elseif selected == 2 then
             drawSelection(2,2,15,6,false)
             term.setCursorPos(6,4)
@@ -1749,6 +1769,10 @@ function backupHud()
             drawSelection(37,2,50,6,false)
             term.setCursorPos(40,4)
             print("Del BList")
+
+            drawSelection(2,8,15,12,false)
+            term.setCursorPos(5,10)
+            print("Shutdown")
 
         elseif selected == 3 then
             drawSelection(2,2,15,6,false)
@@ -1763,14 +1787,35 @@ function backupHud()
             term.setCursorPos(40,4)
             print("Del BList")
 
+            drawSelection(2,8,15,12,false)
+            term.setCursorPos(5,10)
+            print("Shutdown")
+
+        elseif selected == 4 then
+            drawSelection(2,2,15,6,false)
+            term.setCursorPos(6,4)
+            print("Backup")
+
+            drawSelection(19,2,33,6,false)
+            term.setCursorPos(22,4)
+            print("Add BList")
+
+            drawSelection(37,2,50,6,false)
+            term.setCursorPos(40,4)
+            print("Del BList")
+
+            drawSelection(2,8,15,12,true)
+            term.setCursorPos(5,10)
+            print("Shutdown")
+
         end
         local event, key, is_held = os.pullEvent("key")
 
-        if keys.getName(key) == "right" and selected < 3 then
+        if keys.getName(key) == "right" and selected < 4 then
             selected = selected + 1
         elseif keys.getName(key) == "left" and selected > 1 then
             selected = selected - 1
-        elseif keys.getName(key) == "down" and selected < 0 then
+        elseif keys.getName(key) == "down" and selected < 2 then
             selected = selected + 3
         elseif keys.getName(key) == "up" and selected > 3 then
             selected = selected - 3
@@ -1783,6 +1828,8 @@ function backupHud()
                 addBlacklist()
             elseif selected == 3 then
                 deleteBlacklist()
+            elseif selected == 4 then
+                shutDown()
             end
         end
         sleep(0.1)
@@ -1924,6 +1971,8 @@ function runChains()
     setDrive()
     local submodes = {}
     while drive ~= nil do
+        clear = false
+        shutdown = 0
         local slot = 1
         local submodefile = fs.open("submodes.txt", "r")
         while true do
@@ -1940,7 +1989,8 @@ function runChains()
             reset = false
             clearObjects(searchPeripheralFile("blacklist.txt",true),settings.get("Item.setting"), settings.get("Liquid.setting"))
         end
-        sleep(0.1)
+        clear = true
+        sleep(0.5)
     end
 end
 
@@ -1967,12 +2017,13 @@ function runGroup(list)
                             end
                         end
                     end
-            parallel.waitForAny(function() while reset == false do sleep(0.1) end end, table.unpack(command))
+            parallel.waitForAny(function() while shutdown < #command do sleep(0.1) end end, table.unpack(command))
         end
 end
 
 function retainer(func, mode)
     local mark = 1
+    local lock = false
     local setfiles = {}
     if drive[1] ~= "" then
         for i = 1, #drive do
@@ -1992,12 +2043,19 @@ function retainer(func, mode)
         end
         while true do
             for l = 1, #setfiles do
-                if setfiles[l] ~= "" then
+                if setfiles[l] ~= "" and reset == false then
                     local check = func(setfiles[l])
                     if check == false then
                         setfiles[l] = ""
                     end
+                elseif reset == true and lock == false then
+                    shutdown = shutdown + 1
+                    lock = true
                 end
+            end
+            if #setfiles == 0 and lock == false then
+                shutdown = shutdown + 1
+                lock = true
             end
             sleep(0.1)
         end
@@ -2132,6 +2190,18 @@ function runMix(path)
                     return true
                     end
                 elseif templist == nil and check ~= nil then
+                    subTransferItem(OutMachineList,machines,OutputList,Max,Result,path, true)
+                    return true
+                elseif templist == nil and check == nil then
+                    local switch = true
+                    while switch == true do
+                        for slot, item in pairs(OutMachineList[#OutMachineList].list()) do
+                            if item.name ~= "" then
+                                switch = false
+                                break
+                            end
+                        end
+                    end
                     subTransferItem(OutMachineList,machines,OutputList,Max,Result,path, true)
                     return true
                 end
@@ -2277,7 +2347,7 @@ function runFluidMix(path)
     local correct = true
     local stopped = true
     local machines = 1
-
+    
     if path ~= "" and path ~= nil  then
         local file = fs.open(path, "r")
         if file == nil then
@@ -2352,31 +2422,40 @@ function runFluidMix(path)
         for l = 1, #OutMachine do
             OutMachineList[l] = peripheral.wrap(OutMachine[l])
         end
-        local Output = groupCheck(file.readLine(),path)
-        if Output == false then
+        local Outputi = groupCheck(file.readLine(),path)
+        if Outputi == false then
             return false
         end
-        local OutputList = {}
-        for m = 1, #Output do
-            OutputList[m] = peripheral.wrap(Output[m])
+        local OutputiList = {}
+        for m = 1, #Outputi do
+            OutputiList[m] = peripheral.wrap(Outputi[m])
+        end
+        local Outputl = groupCheck(file.readLine(),path)
+        if Outputl == false then
+            return false
+        end
+        local OutputlList = {}
+        for m = 1, #Outputl do
+            OutputlList[m] = peripheral.wrap(Outputl[m])
         end
         file.readLine()
         local Result = file.readLine()
         local desired = file.readLine()
         file.close()
 
-        if pcall(function() local a = OutputList[1].list() end) == false and pcall(function() local a = OutputList[1].tanks() end) == false then
+        if pcall(function() local a = OutputiList[1].list() end) == false and pcall(function() local a = OutputlList[1].tanks() end) == false then
             errorHandler("Output is not Compatible", path)
             return false
         end
-            if pcall(function() OutputList[1].list() end) then
-                for slot, item in pairs(OutputList[1].list()) do
+            if pcall(function() OutputiList[1].list() end) then
+                for slot, item in pairs(OutputiList[1].list()) do
                     if item.name == Result then
                         amount = amount + item.count
                     end
                 end
-            elseif pcall(function() OutputList[1].tanks() end) then
-                for slot, fluid in pairs(OutputList[1].tanks()) do
+            end
+            if pcall(function() OutputlList[1].tanks() end) then
+                for slot, fluid in pairs(OutputlList[1].tanks()) do
                     if fluid.name == Result then
                         amount = amount + fluid.amount
                     end
@@ -2393,22 +2472,25 @@ function runFluidMix(path)
                     else
                         machines = #InMachineList
                     end
-                    for j = 1, #InputiList do
-                        for k = 1, #ingredienti do
-                            local count = 0
-                            for slot, item in pairs(InputiList[j].list()) do
-                                if item.name == ingredienti[k][1] then
+                    for j = 1, #ingredienti do
+                        local count = 0
+                        for k = 1, #InputiList do
+                            for slot, item in pairs(InputiList[k].list()) do
+                                if item.name == ingredienti[j][1] then
                                     count = count + item.count
                                 end
                             end
-                            if ingredienti[k][2]*machines > count then
-                                if ingredienti[k][2]+0 > count then
-                                    correct = false
-                                else
-                                    machines = count/ingredienti[k][2]
-                                end
+                            if count ~= 0 then 
+                                break
                             end
                         end
+                        if ingredienti[j][2]*machines > count then
+                                if ingredienti[j][2]+0 > count then
+                                    correct = false
+                                else
+                                    machines = count/ingredienti[j][2]
+                                end
+                            end
                     end
                     for l = 1, #ingredientl do
                         local count = 0
@@ -2417,6 +2499,9 @@ function runFluidMix(path)
                                 if fluid.name == ingredientl[l][1] then
                                     count = count + fluid.amount
                                 end
+                            end
+                            if count ~= 0 then 
+                                break
                             end
                         end
                         if ingredientl[l][2]*machines > count then
@@ -2429,10 +2514,10 @@ function runFluidMix(path)
                     end
                     if correct ~= false then
                         for l = 1, #ingredienti do
-                            subInsertItem(InputiList,#InputiList,InMachineList,ingredienti[l][2],ingredienti[l][1],path)
+                            subInsertItem(InputiList,#InMachineList,InMachineList,ingredienti[l][2],ingredienti[l][1],path)
                         end
                         for m = 1, #ingredientl do
-                            subTransferFluid(InputlList,#InputlList,InMachineList,ingredientl[m][2],ingredientl[m][1],path)
+                            subTransferFluid(InputlList,#InMachineList,InMachineList,ingredientl[m][2],ingredientl[m][1],path)
                         end
                     else
                         stopped = false
@@ -2446,39 +2531,53 @@ function runFluidMix(path)
                 local check = OutMachineList[machines].getItemDetail(1)
                 if templist ~= nil then
                     if check == nil or templist.name ~= check.name then
-                        if pcall(function() OutputList[1].list() end) then
-                            local item = subTransferItem(OutMachineList, machines, OutputList, desired, Result, path, true)
-                            if item == false then
+                        if pcall(function() OutMachineList[1].list() end) then
+                            local item = subTransferItem(OutMachineList, machines, OutputiList, desired, Result, path, true, true)
+                            local fluid = subTransferFluid(OutMachineList, machines, OutputlList, desired, Result, path, true, true)
+                            if item == false or fluid == false then
                                 return false
                             end                        
-                        end
-                        if pcall(function() OutputList[1].tanks() end) then
-                            local fluid = subTransferFluid(OutMachineList, machines, OutputList, desired, Result, path, true)
-                            if fluid == false then
-                                return false
-                            end
                         end
                         stopped = false
                     end
                 elseif temptlist == nil and check ~= nil then
-                        if pcall(function() OutputList[1].list() end) then
-                            local item = subTransferItem(OutMachineList, machines, OutputList, desired, Result, path, true)
-                            if item == false then
+                        if pcall(function() OutMachineList[1].list() end) then
+                            local item = subTransferItem(OutMachineList, machines, OutputiList, desired, Result, path, true, true)
+                            local fluid = subTransferFluid(OutMachineList, machines, OutputlList, desired, Result, path, true, true)
+                            if item == false or fluid == false then
                                 return false
                             end                        
                         end
-                        if pcall(function() OutputList[1].tanks() end) then
-                            local fluid = subTransferFluid(OutMachineList, machines, OutputList, desired, Result, path, true)
-                            if fluid == false then
-                                return false
+                        stopped = false
+                elseif templist == nil and check == nil then
+                    local switch = true
+                    while switch == true do
+                        for slot, item in pairs(OutMachineList[#OutMachineList].list()) do
+                            if item.name ~= "" then
+                                switch = false
+                                break
                             end
                         end
-                        stopped = false
+                        for slot, item in pairs(OutMachineList[#OutMachineList].tanks()) do
+                            if item.name ~= "" then
+                                switch = false
+                                break
+                            end
+                        end
                     end
+                    if pcall(function() OutMachineList[1].list() end) then
+                        local item = subTransferItem(OutMachineList, machines, OutputiList, desired, Result, path, true, true)
+                        local fluid = subTransferFluid(OutMachineList, machines, OutputlList, desired, Result, path, true, true)
+                        if item == false or fluid == false then
+                            return false
+                        end                        
+                    end
+                    stopped = false
                 end
             end
         end
     end
+end
 
 function runTransfer(path)
 
@@ -2513,18 +2612,18 @@ function runTransfer(path)
 
         if pcall(function () OutputList[1].list() end) then
             if OSlot == "" then
-                local item = subTransferItem(InputList, #OutputList, OutputList, desired, variable, path)
+                local item = subTransferItem(InputList, #InputList, OutputList, desired, variable, path)
                 if item == false then
                     return false
                 end
             else
-                local item = subTransferSlot(InputList, #OutputList, OutputList, desired, variable, OSlot, path)
+                local item = subTransferSlot(InputList, #InputList, OutputList, desired, variable, OSlot, path)
                 if item == false then
                     return false
                 end
             end
         elseif pcall(function () OutputList[1].tanks() end) then
-            local fluid = subTransferFluid(InputList, #OutputList, OutputList, desired, variable, path)
+            local fluid = subTransferFluid(InputList, #InputList, OutputList, desired, variable, path)
             if fluid == false then
                 return false
             end
@@ -2536,7 +2635,7 @@ function runTransfer(path)
     end
 end
 
-function subTransferItem(input, machines, output, desired, variable, path, multi)
+function subTransferItem(input, machines, output, desired, variable, path, multi, fluidmix)
     local amount = 0
     local set = desired * machines
     desired = desired * machines
@@ -2548,7 +2647,7 @@ function subTransferItem(input, machines, output, desired, variable, path, multi
                         end
                     end
                 end
-                if amount < desired*#output then
+                if amount < desired*#output and fluidmix ~= true then
                     for j = 1, machines do
                         for k = 1, #output do
                             for i = 1, input[1].size() do
@@ -2569,6 +2668,14 @@ function subTransferItem(input, machines, output, desired, variable, path, multi
                             end
                         end
                     end
+                elseif fluidmix == true then
+                    for i = 1, machines do
+                        for k = 1, #output do
+                            for j = 1, input[1].size() do
+                                output[k].pullItems(peripheral.getName(input[i]),j,1000000)
+                            end
+                        end
+                    end
                 end
             else
                 errorHandler("Input isnt Inventory", path)
@@ -2576,7 +2683,7 @@ function subTransferItem(input, machines, output, desired, variable, path, multi
             end
 end
 
-function subTransferFluid(input, machines, output, desired, variable, path)
+function subTransferFluid(input, machines, output, desired, variable, path, fluidmix)
     local amount = 0
     local tanks = 1
     local set = desired * machines
@@ -2593,7 +2700,7 @@ function subTransferFluid(input, machines, output, desired, variable, path)
                 if tanks > 1 then
                     tanks = tanks - 1
                 end
-                if amount < desired+0 then
+                if amount < desired+0 and fluidmix ~= true then
                     for i = 1, machines do
                         for k = 1, #output do
                                 local call = output[k].pullFluid(peripheral.getName(input[i]),set/machines,variable)
@@ -2603,6 +2710,12 @@ function subTransferFluid(input, machines, output, desired, variable, path)
                                 elseif desired <= 0 then
                                     return
                                 end
+                        end
+                    end
+                elseif fluidmix == true then
+                    for i = 1, machines do
+                        for k = 1, #output do
+                            output[k].pullFluid(peripheral.getName(input[i]),1000000)
                         end
                     end
                 end
@@ -2615,7 +2728,6 @@ end
 function subInsertItem(input, machines, output, desired, variable, path)
     local amount = 0
     local chosen = 0
-    local select = 1
     local set = desired * machines
     desired = desired * machines
         if pcall(function() input[1].size() end) then
@@ -2705,7 +2817,7 @@ function errorList()
                 while true do
                     term.setCursorPos(4,4 + count)
                     local line = file.readLine()
-                    count = count + 2
+                    count = count + 1
                     if not line or line == "" then
                         file.close()
                         break 
@@ -2721,7 +2833,7 @@ function errorList()
 
 function readTable(list)
     local slide = 1
-    local max = (#list/10)+1
+    local max = math.ceil(#list/10)
 
     drawScreen(2,2,50,20)
     for i = 1, 10 do
@@ -2744,22 +2856,22 @@ function readTable(list)
                                 print(list[i])
                             end
                         end
-                    elseif keys.getName(key) == "up" and slide > 2 then
+                    elseif keys.getName(key) == "up" and slide > 1 then
                         drawScreen(2,0,50,20)
                         slide = slide - 1
                         for i = 1, 10 do
                             term.setCursorPos(4,3 + i)
-                            if list[(slide*10-1)+i] ~= nil then
-                                print(list[(slide*10-1)+i])
+                            if list[((slide-1)*10)+i] ~= nil then
+                                print(list[((slide-1)*10)+i])
                             end
                         end
-                    elseif keys.getName(key) == "down" and slide < max then
+                    elseif keys.getName(key) == "down" and slide < max-1 then
                         drawScreen(2,0,50,20)
                         slide = slide + 1
                         for i = 1, 10 do
                             term.setCursorPos(4,3 + i)
-                            if list[(slide*10-1)+i] ~= nil then
-                                print(list[(slide*10-1)+i])
+                            if list[((slide-1)*10)+i] ~= nil then
+                                print(list[((slide-1)*10)+i])
                             end
                         end
                     elseif keys.getName(key) == "down" and slide == max-1 then
@@ -2767,8 +2879,8 @@ function readTable(list)
                         slide = slide + 1
                         for i = 1, 10 do
                             term.setCursorPos(4,3 + i)
-                            if list[(slide*10-1)+i] ~= nil then
-                                print(list[(slide*10-1)+i])
+                            if list[((slide-1)*10)+i] ~= nil then
+                                print(list[((slide-1)*10)+i])
                             end
                         end
                     end
@@ -2976,7 +3088,7 @@ function clearObjects(peripherals, inventory, fluid)
     for i = 1, #peripherals do
         local wrap = peripheral.wrap(peripherals[i])
         slot = 1
-        if pcall(function() wrap.list() end)then
+        if pcall(function() wrap.list() end) and string.sub(peripheral.getName(wrap), 1, 5) ~= "gtceu" then
             for k = 1, wrap.size() do
                 if wrap.getItemDetail(k) ~= nil then
                     local fill = invwrap[slot].pullItems(peripheral.getName(wrap), k)
@@ -2991,7 +3103,7 @@ function clearObjects(peripherals, inventory, fluid)
             end
         end
         slot = 1
-        if pcall(function() wrap.tanks() end) then
+        if pcall(function() wrap.tanks() end) and string.sub(peripheral.getName(wrap), 1, 5) ~= "gtceu" then
             if pcall(function() fluwrap[slot].pullFluid(peripheral.getName(wrap)) end) then
                 while true do
                     local fill = fluwrap[slot].pullFluid(peripheral.getName(wrap))
@@ -3033,7 +3145,7 @@ function selectIOList(list, string)
     end
     while #list > 0 do
         drawFullScreen()
-        for i = 1, 10 do
+        for i = 1, 11 do
             if i <= 10 and i <= #list and page == 1 then
                 term.setCursorPos(4,4)
                 print(string)
@@ -3223,6 +3335,67 @@ function errorHandler(err, path)
     end
     updatedlog.close()
     erroramount = erroramount + 1
+end
+
+function shutDown()
+    local selected = false
+    while true do
+        paintutils.drawFilledBox(0,0,50,7,colors.black)
+        paintutils.drawFilledBox(2,2,50,7, colors.white)
+        paintutils.drawBox(2,2,50,7, colors.lightGray)
+        term.setBackgroundColor(colors.white)
+        term.setTextColor(colors.black)
+        term.setCursorPos(4,4)
+        print("Confirm Shutdown?")
+        term.setCursorPos(4,5)
+        if selected == true then
+            print("> Shutdown")
+            term.setCursorPos(16,5)
+            print("  Cancel")
+        else
+            print("  Shutdown")
+            term.setCursorPos(16,5)
+            print("> Cancel")
+        end
+        local event, key, is_held = os.pullEvent("key")
+        if keys.getName(key) == "left" and selected == false then
+            selected = true
+        elseif keys.getName(key) == "right" and selected == true then
+            selected = false
+        elseif keys.getName(key) == "enter" then
+            if selected == true then
+                reset = true
+                term.setTextColor(colors.red)
+                term.setCursorPos(22,4)
+                print("Shutting Down. . .")
+                while true do
+                    if clear == true then
+                        os.shutdown()
+                    end
+                    sleep(0.1)
+                end
+            else
+                break
+            end
+        end
+    end
+end
+
+function drawLogo()
+    local logo = paintutils.parseImage([[
+          0000000  8  0000000
+         000800000080000008000
+        00080000800000800008000
+        00080008000800080008000
+       e00eee008eeeeeee800eee00e
+       eee   eee   7   eee   eee
+                 77             
+    a e a22aa    7  a22aa2aa2   e
+     ea22aaa22a227a2aaa  a22aaae
+    e         aaa77  7        e a
+                  777        
+    ]])
+    paintutils.drawImage(logo, term.getCursorPos())
 end
 
 --MainLine
