@@ -1,4 +1,4 @@
-# Yakumo Logistics (v0.7)
+# Yakumo Logistics (v1.0)
 A Factory Manager for [Computercraft/CC: Tweaked](https://tweaked.cc/)
 
 # How to Download Main program
@@ -82,4 +82,5 @@ As for **Error logs**, they are self explanitory. They show errors of your recip
 - **Backup**: Chooses a Backup for both item and fluid variaties. You can use peripheral groups for this! Perferably into storage.
 - **Add BList**: Not all mods are created equal. By default, items take from anything other then chests and barrels and puts them in storage. Not ideal! This sets up other storage containers the backup won't touch.
 - **Del BList**: Add one that shouldnt be there? Yoou can remove it at any time by deleting it entirely!
+- **Shutdown**: Shuts all your machines down before the computer itself. Perfect for safely leaving your base without relying on the backup system. 
 - **Error Log**: Shows a list of error logs, organized by #error then time. They do delete over time to save on space...
